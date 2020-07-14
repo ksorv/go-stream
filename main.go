@@ -19,8 +19,11 @@ const uploadPath = "in"
 const mediaRoot = "m3u8s"
 
 func main() {
+	port := os.Getenv("PORT")
+
 	http.Handle("/", handlers())
-	http.ListenAndServe(":8000", nil)
+
+	http.ListenAndServe(fmt.Sprintf(":%d", port || 8000), nil)
 }
 
 func handlers() *mux.Router {
