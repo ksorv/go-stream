@@ -3,7 +3,7 @@
 	<title>Upload file</title>
 </head>
 <body>
-<form enctype="multipart/form-data" action="https://demuxstream.herokuapp.com/upload" method="post">
+<form enctype="multipart/form-data" action="http://localhost:8000/upload" method="post">
 	<input type="file" name="uploadFile" />
 	<input type="submit" value="upload" />
 </form>
