@@ -1,10 +1,8 @@
 package main
 
 import (
-	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -12,7 +10,6 @@ import (
 	"text/template"
 
 	"github.com/gorilla/mux"
-	"github.com/xfrr/goffmpeg/transcoder"
 )
 
 const uploadPath = "in"
@@ -32,14 +29,12 @@ func handlers() *mux.Router {
 	return router
 }
 
-func uploadHandler(response http.ResponseWriter, request *http.Request) {
+func uploadHandler(request http.ResponseWriter, request *http.Request) {
 	if request.Method == "GET" {
 		template, _ := template.ParseFiles("upload.gtpl")
-		template.Execute(response, nil)
+		template.Execute(request, nil)
 		return
 	}
-
-	fileName := randToken(12)
 
 	// Parse
 	file, fileHeader, err := request.FormFile("uploadFile")
@@ -56,7 +51,7 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 	// FileByte *!---!*
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		renderError(response, "INVALID_FILE", http.StatusBadRequest)
+		renderError(request, "INVALID_FILE", http.StatusBadRequest)
 		return
 	}
 
@@ -65,13 +60,14 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 	case "video/mp4":
 		break
 	default:
-		renderError(response, "INVALID_FILE_TYPE", http.StatusBadRequest)
+		renderError(request, "INVALID_FILE_TYPE", http.StatusBadRequest)
 		return
 	}
 
+	fileName := randToken(12)
 	fileEndings, err := mime.ExtensionsByType(detectedFileType)
 	if err != nil {
-		renderError(response, "CANT_READ_FILE_TYPE", http.StatusInternalServerError)
+		renderError(request, "CANT_READ_FILE_TYPE", http.StatusInternalServerError)
 		return
 	}
 	newPath := filepath.Join(uploadPath, fileName+fileEndings[0])
@@ -80,59 +76,16 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 	// write file
 	newFile, err := os.Create(newPath)
 	if err != nil {
-		renderError(response, "CANT_WRITE_FILE", http.StatusInternalServerError)
+		renderError(request, "CANT_WRITE_FILE", http.StatusInternalServerError)
 		return
 	}
 
 	defer newFile.Close() // idempotent, okay to call twice
 	if _, err := newFile.Write(fileBytes); err != nil || newFile.Close() != nil {
-		renderError(response, "CANT_WRITE_FILE", http.StatusInternalServerError)
+		renderError(request, "CANT_WRITE_FILE", http.StatusInternalServerError)
 		return
 	}
-
-	_, err1 := os.Stat(fmt.Sprintf("m3u8s/%s", fileName))
-
-	if os.IsNotExist(err1) {
-		errDir := os.MkdirAll(fmt.Sprintf("m3u8s/%s", fileName), 0755)
-		if errDir != nil {
-			log.Fatal(err1)
-		} else {
-			fmt.Printf("Created: %s", fileName)
-			trans := new(transcoder.Transcoder)
-			trans.InitializeEmptyTranscoder()
-			err = trans.Initialize(newPath, fmt.Sprintf("m3u8s/%s/index.m3u8", fileName))
-			trans.MediaFile().SetHlsListSize(0)
-			trans.MediaFile().SetHlsSegmentDuration(10)
-
-			if err != nil {
-				renderError(response, "CANT_TRANSCODE_FILE", http.StatusInternalServerError)
-				return
-			}
-
-			// Start transcoder process with progress checking
-			done := trans.Run(true)
-
-			// Returns a channel to get the transcoding progress
-			progress := trans.Output()
-
-			// Example of printing transcoding progress
-			for msg := range progress {
-				fmt.Println(msg)
-			}
-
-			// This channel is used to wait for the transcoding process to end
-			err = <-done
-
-			if err == nil {
-				os.Remove(newPath)
-				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:8000/media/%s/stream/index.m3u8", fileName)))
-			} else {
-				response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
-				fmt.Print(err)
-			}
-		}
-
-	}
+	w.Write([]byte("SUCCESS"))
 
 }
 
@@ -153,7 +106,9 @@ func streamHandler(response http.ResponseWriter, request *http.Request) {
 }
 
 func indexPage(response http.ResponseWriter, request *http.Request) {
-	http.ServeFile(response, request, "index.html")
+	template, _ := template.ParseFiles("index.gtpl")
+	template.Execute(response, nil)
+	return
 }
 
 func getMediaBase(folder string) string {
@@ -170,15 +125,4 @@ func serveHlsTs(response http.ResponseWriter, request *http.Request, mediaBase, 
 	mediaFile := fmt.Sprintf("%s/%s", mediaBase, segName)
 	http.ServeFile(response, request, mediaFile)
 	response.Header().Set("Content-Type", "video/MP2T")
-}
-
-func renderError(response http.ResponseWriter, message string, statusCode int) {
-	response.WriteHeader(http.StatusBadRequest)
-	response.Write([]byte(message))
-}
-
-func randToken(len int) string {
-	b := make([]byte, len)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
 }

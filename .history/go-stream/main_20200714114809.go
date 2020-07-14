@@ -100,9 +100,10 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 			fmt.Printf("Created: %s", fileName)
 			trans := new(transcoder.Transcoder)
 			trans.InitializeEmptyTranscoder()
-			err = trans.Initialize(newPath, fmt.Sprintf("m3u8s/%s/index.m3u8", fileName))
+			err = trans.Initialize(newPath, fmt.Sprintf("/m3u8s/%s/%s.m3u8", fileName, fileName))
+			trans.MediaFile().SetAspect("640x360")
 			trans.MediaFile().SetHlsListSize(0)
-			trans.MediaFile().SetHlsSegmentDuration(10)
+			trans.MediaFile().SetHlsSegmentDuration(5)
 
 			if err != nil {
 				renderError(response, "CANT_TRANSCODE_FILE", http.StatusInternalServerError)
@@ -124,8 +125,7 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 			err = <-done
 
 			if err == nil {
-				os.Remove(newPath)
-				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:8000/media/%s/stream/index.m3u8", fileName)))
+				response.Write([]byte(fmt.Sprintf("SUCCESS, id: %s", fileName)))
 			} else {
 				response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
 				fmt.Print(err)

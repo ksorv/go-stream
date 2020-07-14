@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"net/http"
 	"os"
@@ -90,48 +89,37 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	_, err1 := os.Stat(fmt.Sprintf("m3u8s/%s", fileName))
+	trans := new(transcoder.Transcoder)
+	trans.InitializeEmptyTranscoder()
+	err = trans.Initialize(newPath, fmt.Sprintf("/m3u8s/%s.m3u8", fileName, fileName))
+	// trans.MediaFile().SetAspect("640x360")
+	// trans.MediaFile().SetHlsListSize(0)
+	// trans.MediaFile().SetHlsSegmentDuration(5)
 
-	if os.IsNotExist(err1) {
-		errDir := os.MkdirAll(fmt.Sprintf("m3u8s/%s", fileName), 0755)
-		if errDir != nil {
-			log.Fatal(err1)
-		} else {
-			fmt.Printf("Created: %s", fileName)
-			trans := new(transcoder.Transcoder)
-			trans.InitializeEmptyTranscoder()
-			err = trans.Initialize(newPath, fmt.Sprintf("m3u8s/%s/index.m3u8", fileName))
-			trans.MediaFile().SetHlsListSize(0)
-			trans.MediaFile().SetHlsSegmentDuration(10)
+	if err != nil {
+		renderError(response, "CANT_TRANSCODE_FILE", http.StatusInternalServerError)
+		return
+	}
 
-			if err != nil {
-				renderError(response, "CANT_TRANSCODE_FILE", http.StatusInternalServerError)
-				return
-			}
+	// Start transcoder process with progress checking
+	done := trans.Run(true)
 
-			// Start transcoder process with progress checking
-			done := trans.Run(true)
+	// Returns a channel to get the transcoding progress
+	progress := trans.Output()
 
-			// Returns a channel to get the transcoding progress
-			progress := trans.Output()
+	// Example of printing transcoding progress
+	for msg := range progress {
+		fmt.Println(msg)
+	}
 
-			// Example of printing transcoding progress
-			for msg := range progress {
-				fmt.Println(msg)
-			}
+	// This channel is used to wait for the transcoding process to end
+	err = <-done
 
-			// This channel is used to wait for the transcoding process to end
-			err = <-done
-
-			if err == nil {
-				os.Remove(newPath)
-				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:8000/media/%s/stream/index.m3u8", fileName)))
-			} else {
-				response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
-				fmt.Print(err)
-			}
-		}
-
+	if err == nil {
+		response.Write([]byte(fmt.Sprintf("SUCCESS, id: %s", fileName)))
+	} else {
+		response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
+		fmt.Print(err)
 	}
 
 }

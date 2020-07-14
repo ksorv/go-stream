@@ -1,0 +1,35 @@
+{
+	"ImportPath": "github.com/sauravkhdoolia/go-stream",
+	"GoVersion": "go1.14",
+	"GodepVersion": "v80",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.7.4-2-g98cb6bf",
+			"Rev": "98cb6bf42e086f6af920b965c38cacc07402d51b"
+		},
+		{
+			"ImportPath": "github.com/xfrr/goffmpeg/ffmpeg",
+			"Comment": "0.5.0-15-gfb3f88b",
+			"Rev": "fb3f88b1924ee96c869a613ea7bb16f5f154d223"
+		},
+		{
+			"ImportPath": "github.com/xfrr/goffmpeg/models",
+			"Comment": "0.5.0-15-gfb3f88b",
+			"Rev": "fb3f88b1924ee96c869a613ea7bb16f5f154d223"
+		},
+		{
+			"ImportPath": "github.com/xfrr/goffmpeg/transcoder",
+			"Comment": "0.5.0-15-gfb3f88b",
+			"Rev": "fb3f88b1924ee96c869a613ea7bb16f5f154d223"
+		},
+		{
+			"ImportPath": "github.com/xfrr/goffmpeg/utils",
+			"Comment": "0.5.0-15-gfb3f88b",
+			"Rev": "fb3f88b1924ee96c869a613ea7bb16f5f154d223"
+		}
+	]
+}

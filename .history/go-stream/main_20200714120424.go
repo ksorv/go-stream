@@ -124,8 +124,7 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 			err = <-done
 
 			if err == nil {
-				os.Remove(newPath)
-				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:8000/media/%s/stream/index.m3u8", fileName)))
+				response.Write([]byte(fmt.Sprintf("SUCCESS, locahost:8000/media/%s/stream/index.m3u8", fileName)))
 			} else {
 				response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
 				fmt.Print(err)
@@ -180,5 +179,5 @@ func renderError(response http.ResponseWriter, message string, statusCode int) {
 func randToken(len int) string {
 	b := make([]byte, len)
 	rand.Read(b)
-	return fmt.Sprintf("%x", b)
+	return fmt.Sprintf("%x+ss", b)
 }
