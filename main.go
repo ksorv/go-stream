@@ -19,7 +19,7 @@ const uploadPath = "in"
 const mediaRoot = "m3u8s"
 
 func main() {
-	http.HandleFunc("/", handlers)
+	http.HandleFunc("/", handlers())
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
 		port = "8000"
