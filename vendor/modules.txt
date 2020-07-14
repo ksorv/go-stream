@@ -1,0 +1,9 @@
+# github.com/gorilla/mux v1.7.5-0.20200711200521-98cb6bf42e08
+## explicit
+github.com/gorilla/mux
+# github.com/xfrr/goffmpeg v0.0.0-20200624145540-fb3f88b1924e
+## explicit
+github.com/xfrr/goffmpeg/ffmpeg
+github.com/xfrr/goffmpeg/models
+github.com/xfrr/goffmpeg/transcoder
+github.com/xfrr/goffmpeg/utils
