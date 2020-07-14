@@ -19,11 +19,16 @@ const uploadPath = "in"
 const mediaRoot = "m3u8s"
 
 func main() {
+	http.HandleFunc("/", handlers)
 	port := os.Getenv("PORT")
-
-	http.Handle("/", handlers())
-
-	http.ListenAndServe(fmt.Sprintf(":%d", port || 8000), nil)
+	if len(port) == 0 {
+		port = "8000"
+	}
+	fmt.Println("listening on port: ", port)
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handlers() *mux.Router {
@@ -128,7 +133,11 @@ func uploadHandler(response http.ResponseWriter, request *http.Request) {
 
 			if err == nil {
 				os.Remove(newPath)
-				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:8000/media/%s/stream/index.m3u8", fileName)))
+				port := os.Getenv("PORT")
+				if len(port) == 0 {
+					port = "8000"
+				}
+				response.Write([]byte(fmt.Sprintf("SUCCESS, Copy this link & Paste in VLC: http://localhost:%s/media/%s/stream/index.m3u8", port, fileName)))
 			} else {
 				response.Write([]byte(fmt.Sprintf("Failed: %s", err)))
 				fmt.Print(err)
